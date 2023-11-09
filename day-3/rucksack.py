@@ -80,34 +80,48 @@ def __hash_rucksack_contents_by_item(rucksack_strings: tuple[str]) -> dict[str, 
     for i, contents in enumerate(rucksack_strings):
         for char in contents:
             if char not in rucksack_mapping:
-                rucksack_mapping[char] = []
-            rucksack_mapping[char].append(i)
+                rucksack_mapping[char] = set()
+            rucksack_mapping[char].add(i)
     return rucksack_mapping
 
 
-def __count_rucksack_hash_occurences(__rucksack_hash: dict[str: int]):
+def __count_rucksack_hash_elf_occurences(__rucksack_hash: dict[str: int]):
     return {char: len(elfs) for char, elfs in __rucksack_hash.items()}
 
 
 # public function
-count_rucksack_hash_occurences = __count_rucksack_hash_occurences
+count_rucksack_hash_occurences = __count_rucksack_hash_elf_occurences
 
 
-def __get_badges(rucksack_hash: dict[str: int]):
-    badges = []
+def __get_badge(rucksack_hash: dict[str: int]) -> str:
     for char, num_elfs in rucksack_hash.items():
         if num_elfs == 3:
-            badges.append(char)
-    return badges
+            return char
 
-def find_badge_values(rucksack_strings: tuple[str]) -> tuple(int):
-    """f
+
+def __split_to_groups(rucksack_strings: tuple[str], group_size: int=3) -> tuple[tuple[str]]:
+    """Split rucksack_strings (Iterable of strings) into groups of size group_size"""
+    return tuple(rucksack_strings[i:i+group_size] 
+                 for i in range(0, len(rucksack_strings), group_size))
+
+
+def __find_badge_chars(rucksack_strings: tuple[str]) -> tuple[str]:
+    """find which items occur three times
 
     """
-    rucksack_hash = __hash_rucksack_contents_by_item(rucksack_strings)
-    counted_rucksack_hash = __count_rucksack_hash_occurences(rucksack_hash)
-    print(counted_rucksack_hash)
-    badges = __get_badges(counted_rucksack_hash)
+    groups = __split_to_groups(rucksack_strings)
+    badges = []
+    for group in groups:
+        group_hash = __hash_rucksack_contents_by_item(group)
+        counted_rucksack_hash = __count_rucksack_hash_elf_occurences(group_hash)
+        badges.append(__get_badge(counted_rucksack_hash))
+    return badges
+
+def find_badge_values(rucksack_strings: tuple[str]) -> tuple[int]:
+    """find which items occur three times
+
+    """
+    badges = __find_badge_chars(rucksack_strings)
     return tuple(__value_of_char(badge) for badge in badges)
 
 if __name__ == "__main__":
@@ -142,3 +156,26 @@ if __name__ == "__main__":
     assert __find_common_character("wMqvLMZHhHMvwLHjbvcjnnSBnvTQFn") == "v"
     assert __find_common_character("ttgJtRGJQctTZtZT") == "t"
     assert __find_common_character("CrZsJsPPZsGzwwsLwLmpwMDw") == "s"
+
+    # problem 2 tests
+    assert __split_to_groups(("a", "b", "c", "d", "e", "f")) == (("a", "b", "c"), ("d", "e", "f"))
+    test_1 = {
+        "input": (
+            "vJrwpWtwJgWrhcsFMMfFFhFp",
+            "jqHRNqRjqzjGDLGLrsFMfFZSrLrFZsSL",
+            "PmmdzqPrVvPwwTWBwg",
+            ),
+        "ans": "r",
+        }
+    test_2 = {
+        "input": (
+            "wMqvLMZHhHMvwLHjbvcjnnSBnvTQFn",
+            "ttgJtRGJQctTZtZT",
+            "CrZsJsPPZsGzwwsLwLmpwMDw",
+            ),
+        "ans": "Z",
+        }
+    assert __find_badge_chars(test_1["input"])[0] == test_1["ans"]
+    assert find_badge_values(test_1["input"])[0] == __value_of_char(test_1["ans"])
+    assert __find_badge_chars(test_2["input"])[0] == test_2["ans"]
+    assert find_badge_values(test_2["input"])[0] == __value_of_char(test_2["ans"])
